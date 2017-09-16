@@ -9,19 +9,30 @@ const bot = new TelegramBot(token, {polling: true});
 let idInterval = null;
 
 bot.onText(/\/multisalud/, (msg, match) => {
-  const chatId = msg.chat.id;
-  //const resp = match[1];
-  getValorLiquidativo(chatId);
-  idInterval = setInterval(() => {
-    getValorLiquidativo(chatId);
-  //}, 10000);
-  }, 1000 * 60 * 60 * 24);
+	const chatId = msg.chat.id;
+	if (!idInterval) {
+	  //const resp = match[1];
+	  getValorLiquidativo(chatId);
+	  idInterval = setInterval(() => {
+	    getValorLiquidativo(chatId);
+	  }, 1000 * 60 * 60 * 24);
+	  //}, 10000);
+	}
+	else {
+		bot.sendMessage(chatId, 'Proceso ya lanzado');
+	}
 });
 
 bot.onText(/\/stop/, (msg, match) => {
-  clearInterval(idInterval);
-  const chatId = msg.chat.id;
-  bot.sendMessage(chatId, 'Proceso parado');
+	const chatId = msg.chat.id;
+	if (idInterval) {
+	  clearInterval(idInterval);
+	  bot.sendMessage(chatId, 'Proceso parado');
+	  idInterval = null;
+	}
+	else {
+		bot.sendMessage(chatId, 'Proceso ya parado');
+	}
 });
 
 var getValorLiquidativo = function(chatId) {
