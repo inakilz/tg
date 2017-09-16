@@ -8,12 +8,13 @@ const selector = '#overviewQuickstatsDiv table tr:nth-child(2) td.line.text';
 
 const bot = new TelegramBot(token, {polling: true});
 let idInterval = null;
-/*setInterval(function() {
+setInterval(function() {
   http.get("http://multisalud.herokuapp.com/");
-}, 300000);*/
+}, 300000);
 http.createServer(function (req, res) { 
 	res.writeHead(200, {'Content-Type': 'text/plain'}); 
-	res.send('it is running\n'); })
+	res.write('Running'); 
+  res.end();})
 	.listen(process.env.PORT || 5000);
 
 bot.onText(/\/multisalud/, (msg, match) => {
