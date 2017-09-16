@@ -11,7 +11,10 @@ let idInterval = null;
 /*setInterval(function() {
   http.get("http://multisalud.herokuapp.com/");
 }, 300000);*/
-
+http.createServer(function (req, res) { 
+	res.writeHead(200, {'Content-Type': 'text/plain'}); 
+	res.send('it is running\n'); })
+	.listen(process.env.PORT || 5000);
 
 bot.onText(/\/multisalud/, (msg, match) => {
 	const chatId = msg.chat.id;
