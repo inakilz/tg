@@ -8,9 +8,9 @@ const selector = '#overviewQuickstatsDiv table tr:nth-child(2) td.line.text';
 
 const bot = new TelegramBot(token, {polling: true});
 let idInterval = null;
-setInterval(function() {
+/*setInterval(function() {
   http.get("http://multisalud.herokuapp.com/");
-}, 300000);
+}, 300000);*/
 
 
 bot.onText(/\/multisalud/, (msg, match) => {
