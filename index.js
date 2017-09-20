@@ -4,8 +4,12 @@ const http = require("http");
 
 const token = '445554489:AAGOmrNRNF9-Cn8GCIL3mCh6_GQ_iccqiYI';
 const selector = '#overviewQuickstatsDiv table tr:nth-child(2) td.line.text';
-const urlSearch = 'https://www.google.es/search?q=sites:morningstar.es+fondo+';
+const urlSearchFondo = 'https://www.google.es/search?q=sites:morningstar.es+caixa+fondo+';
+const urlSearchValores = 'https://www.google.es/search?q=valores+liquidativos+caixa+multisalud&oq=valores+liquidativos+caixa+';
+const urlImgBase = 'http://chart.googleapis.com/chart?chxt=y&cht=lc&chof=.png&chs=400x300&chdls=000000&chg=0%2C10&chco=76A4FB&chtt=Valor%20liquidativo&chts=76A4FB%2C14&chls=2&chma=35%2C15%2C0%2C20&chf=bg%2Cs%2CF9F9F9&chd=t%3A';
 let urlFondo = '';
+let urlValores = '';
+let valores = [];
 
 const bot = new TelegramBot(token, {polling: true});
 let idInterval = null;
@@ -38,7 +42,7 @@ bot.onText(/\/search\s+(.*)/, (msg, match) => {
 
 bot.on('message', (msg) => {
 	const chatId = msg.chat.id;
-	if (msg.text == 'Aceptar') {
+	if (msg.text == 'Subscribir') {
 	  if (!idInterval) {
 	  	let nombreFondo = msg.reply_to_message.text.replace('Fondo encontrado:\n','');
 		  getValorLiquidativo(chatId, nombreFondo);
@@ -46,6 +50,18 @@ bot.on('message', (msg) => {
 		    getValorLiquidativo(chatId, nombreFondo);
 		  }, 1000 * 60 * 60 * 24);
 		  //}, 10000);
+		  let urlImagen = urlImgBase;
+		  valores.reverse();
+		 	for (i=0; i<valores.length; i++) {
+		 		urlImagen += valores[i].toString();
+		 		if ((i+1) < valores.length) urlImagen += '%2C';
+		 	}
+		 	let maxValue = Math.round(Math.max(...valores)) + 1;
+		 	let minValue = Math.round(Math.min(...valores)) - 1;
+		 	urlImagen += '&chds=' + minValue + '%2C' + maxValue;
+		 	urlImagen += '&chxr=0%2C' + minValue + '%2C' + maxValue;
+		 	console.log(urlImagen);
+		 	bot.sendPhoto(chatId, urlImagen);
 		}
 		else {
 			bot.sendMessage(chatId, 'Proceso ya lanzado');
@@ -69,7 +85,7 @@ var getValorLiquidativo = function(chatId, nombreFondo) {
 
 var searchFondo = function(fondo, chatId) {
 	osmosis
-	  .get(urlSearch + fondo) 
+	  .get(urlSearchFondo + fondo) 
     .find('.g:first .r a')
     .set({
     	'link': '@href'
@@ -83,14 +99,29 @@ var searchFondo = function(fondo, chatId) {
     	urlFondo = data.link;
 	   	bot.sendMessage(chatId, 'Fondo encontrado:\n' + data.title, {
 				"reply_markup": {
-			    "keyboard": [["Aceptar", "Cancelar"]],
+			    "keyboard": [["Subscribir", "Cancelar"]],
+        	"resize_keyboard": true,
+        	"one_time_keyboard": true
 			  }
 			});
 	  })
 	  .log(console.log)
 	  .error(console.log)
-	  .debug(console.log)
+	  .debug(console.log);
+	osmosis
+	  .get(urlSearchValores + fondo) 
+    .find('.g:first .r a')
+    .set({
+    	'link': '@href'
+    })
+    .follow('@href')
+    .find('.contentBodyGrid li.valor')
+    .set({'valor': 'span'})
+    .data(function(data) {
+    	if(!urlValores) urlValores = data.link;
+    	valores.push(parseFloat(data.valor.replace(' euros', '').replace(',','.')).toFixed(3));
+	  })
+	  .log(console.log)
+	  .error(console.log)
+	  .debug(console.log);
 }
-
-
-
