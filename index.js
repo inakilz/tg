@@ -5,7 +5,7 @@ const http = require("http");
 const token = '445554489:AAGOmrNRNF9-Cn8GCIL3mCh6_GQ_iccqiYI';
 const selector = '#overviewQuickstatsDiv table tr:nth-child(2)';
 const urlSearchFondo = 'https://www.google.es/search?q=sites:morningstar.es+caixa+fondo+';
-const urlSearchValores = 'https://www.google.es/search?q=valores+liquidativos+caixa+multisalud&oq=valores+liquidativos+caixa+';
+const urlSearchValores = 'https://www.google.es/search?q=valores+liquidativos+caixa+';
 const urlImgBase = 'http://chart.googleapis.com/chart?chxt=y&cht=lc&chof=.png&chs=400x300&chdls=000000&chg=0%2C10&chco=76A4FB&chts=76A4FB%2C14&chls=2&chma=35%2C15%2C0%2C20&chf=bg%2Cs%2CF9F9F9&chd=t%3A';
 let urlFondo = '';
 let urlValores = '';
@@ -27,30 +27,36 @@ bot.onText(/\/stop/, (msg, match) => {
 	const chatId = msg.chat.id;
 	if (idInterval) {
 	  clearInterval(idInterval);
-	  bot.sendMessage(chatId, 'Proceso parado');
+	  bot.sendMessage(chatId, 'Subscripción cancelada.');
 	  idInterval = null;
 	 	urlFondo = null;
 	}
 	else {
-		bot.sendMessage(chatId, 'Proceso ya parado');
+		bot.sendMessage(chatId, 'No hay subscripción activa.');
 	}
 });
 
 bot.onText(/\/search\s+(.*)/, (msg, match) => {
 	const chatId = msg.chat.id;
+	if (idInterval) {
+	  clearInterval(idInterval);
+	  idInterval = null;
+	 	urlFondo = null;
+		bot.sendMessage(chatId, 'Relanzando subscripción...');
+	}
 	searchFondo(match[1], chatId);
 });
 
 bot.on('message', (msg) => {
 	const chatId = msg.chat.id;
 	if (msg.text == 'Subscribir') {
-	  if (!idInterval) {
-	  	let nombreFondo = msg.reply_to_message.text.replace('Fondo encontrado:\n','');
-		  getValorLiquidativo(chatId, nombreFondo);
-		  idInterval = setInterval(() => {
-		    getValorLiquidativo(chatId, nombreFondo);
-		  }, 1000 * 60 * 60 * 24);
-		  //}, 10000);
+  	let nombreFondo = msg.reply_to_message.text.replace('Fondo encontrado:\n','');
+	  getValorLiquidativo(chatId, nombreFondo);
+	  idInterval = setInterval(() => {
+	    getValorLiquidativo(chatId, nombreFondo);
+	  }, 1000 * 60 * 60 * 24);
+	  //}, 10000);
+	  if (valores.length > 0) {
 		  let urlImagen = urlImgBase;
 		  valores.reverse();
 		 	for (i=0; i<valores.length; i++) {
@@ -62,14 +68,11 @@ bot.on('message', (msg) => {
 		 	urlImagen += '&chds=' + minValue + '%2C' + maxValue;
 		 	urlImagen += '&chxr=0%2C' + minValue + '%2C' + maxValue;
 		 	urlImagen += '&chtt=Valor%20liquidativo%20a%20' + fechagraph;
-		 	valores = [];
-		 	urlValores = '';
-      fechagraph = '';
 		 	console.log(urlImagen);
 		 	bot.sendPhoto(chatId, urlImagen);
 		}
 		else {
-			bot.sendMessage(chatId, 'Proceso ya lanzado');
+			bot.sendMessage(chatId, 'No se ha encontrado información de valores liquidativos.');
 		}
 	}
 });
@@ -117,6 +120,10 @@ var searchFondo = function(fondo, chatId) {
 	  .log(console.log)
 	  .error(console.log)
 	  .debug(console.log);
+	valores = [];
+	urlValores = '';
+  fechagraph = '';
+  console.log(urlSearchValores + fondo);
 	osmosis
 	  .get(urlSearchValores + fondo) 
     .find('.g:first .r a')
