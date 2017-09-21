@@ -60,6 +60,7 @@ bot.on('message', (msg) => {
 		 	let minValue = Math.round(Math.min(...valores)) - 1;
 		 	urlImagen += '&chds=' + minValue + '%2C' + maxValue;
 		 	urlImagen += '&chxr=0%2C' + minValue + '%2C' + maxValue;
+		 	valores = [];
 		 	console.log(urlImagen);
 		 	bot.sendPhoto(chatId, urlImagen);
 		}
