@@ -125,7 +125,7 @@ var searchFondo = function(fondo, chatId) {
 		    	'link': '@href'
 		    })
 		    .follow('@href')
-		    .find('.contentBodyGrid li.valor')
+		    .find('#MainContent_valorLiqDetail_UpdatePanelContent .contentBodyGrid li.valor')
 		    .set({'valor': 'span'})
 			  .find('.contentBodyGrid li.fechavalor:first')
 		    .set({'fecha': 'span'})
