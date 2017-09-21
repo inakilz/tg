@@ -4,8 +4,8 @@ const http = require("http");
 
 const token = '445554489:AAGOmrNRNF9-Cn8GCIL3mCh6_GQ_iccqiYI';
 const selector = '#overviewQuickstatsDiv table tr:nth-child(2)';
-const urlSearchFondo = 'https://www.google.es/search?q=sites:morningstar.es+caixa+fondo+';
-const urlSearchValores = 'https://www.google.es/search?q=valores+liquidativos+caixa+';
+const urlSearchFondo = 'https://www.google.es/search?q=site:morningstar.es+caixa+fondo+';
+const urlSearchValores = 'https://www.google.es/search?q=site:caixabankassetmanagement.com+valores+liquidativos+';
 const urlImgBase = 'http://chart.googleapis.com/chart?chxt=y&cht=lc&chof=.png&chs=400x300&chdls=000000&chg=0%2C10&chco=76A4FB&chts=76A4FB%2C14&chls=2&chma=35%2C15%2C0%2C20&chf=bg%2Cs%2CF9F9F9&chd=t%3A';
 let urlFondo = '';
 let urlValores = '';
@@ -29,7 +29,6 @@ bot.onText(/\/stop/, (msg, match) => {
 	  clearInterval(idInterval);
 	  bot.sendMessage(chatId, 'Subscripción cancelada.');
 	  idInterval = null;
-	 	urlFondo = null;
 	}
 	else {
 		bot.sendMessage(chatId, 'No hay subscripción activa.');
@@ -38,18 +37,16 @@ bot.onText(/\/stop/, (msg, match) => {
 
 bot.onText(/\/search\s+(.*)/, (msg, match) => {
 	const chatId = msg.chat.id;
-	if (idInterval) {
-	  clearInterval(idInterval);
-	  idInterval = null;
-	 	urlFondo = null;
-		bot.sendMessage(chatId, 'Relanzando subscripción...');
-	}
 	searchFondo(match[1], chatId);
 });
 
 bot.on('message', (msg) => {
 	const chatId = msg.chat.id;
 	if (msg.text == 'Subscribir') {
+		if (idInterval) {
+		  clearInterval(idInterval);
+		  idInterval = null;
+		}
   	let nombreFondo = msg.reply_to_message.text.replace('Fondo encontrado:\n','');
 	  getValorLiquidativo(chatId, nombreFondo);
 	  idInterval = setInterval(() => {
@@ -72,7 +69,7 @@ bot.on('message', (msg) => {
 		 	bot.sendPhoto(chatId, urlImagen);
 		}
 		else {
-			bot.sendMessage(chatId, 'No se ha encontrado información de valores liquidativos.');
+			bot.sendMessage(chatId, 'No se ha encontrado información de los últimos valores liquidativos.');
 		}
 	}
 });
@@ -96,6 +93,7 @@ var getValorLiquidativo = function(chatId, nombreFondo) {
 }
 
 var searchFondo = function(fondo, chatId) {
+	urlFondo = null;
 	osmosis
 	  .get(urlSearchFondo + fondo) 
     .find('.g:first .r a')
@@ -116,32 +114,30 @@ var searchFondo = function(fondo, chatId) {
         	"one_time_keyboard": true
 			  }
 			});
-	  })
+			valores = [];
+			urlValores = '';
+		  fechagraph = '';
+		  console.log(urlSearchValores + data.title);
+			osmosis
+			  .get(urlSearchValores + fondo) 
+		    .find('.g:first .r a')
+		    .set({
+		    	'link': '@href'
+		    })
+		    .follow('@href')
+		    .find('.contentBodyGrid li.valor')
+		    .set({'valor': 'span'})
+			  .find('.contentBodyGrid li.fechavalor:first')
+		    .set({'fecha': 'span'})
+		    .data(function(data) {
+		    	console.log(data);
+		    	if(!urlValores) urlValores = data.link;
+		    	if(!fechagraph) fechagraph = data.fecha;
+		    	valores.push(parseFloat(data.valor.replace(' euros', '').replace(',','.')).toFixed(3));
+			  })
+			  .log(console.log)
+			  .error(console.log);
+		})
 	  .log(console.log)
-	  .error(console.log)
-	  .debug(console.log);
-	valores = [];
-	urlValores = '';
-  fechagraph = '';
-  console.log(urlSearchValores + fondo);
-	osmosis
-	  .get(urlSearchValores + fondo) 
-    .find('.g:first .r a')
-    .set({
-    	'link': '@href'
-    })
-    .follow('@href')
-    .find('.contentBodyGrid li.valor')
-    .set({'valor': 'span'})
-	  .find('.contentBodyGrid li.fechavalor:first')
-    .set({'fecha': 'span'})
-    .data(function(data) {
-    	console.log(data);
-    	if(!urlValores) urlValores = data.link;
-    	if(!fechagraph) fechagraph = data.fecha;
-    	valores.push(parseFloat(data.valor.replace(' euros', '').replace(',','.')).toFixed(3));
-	  })
-	  .log(console.log)
-	  .error(console.log)
-	  .debug(console.log);
+	  .error(console.log);
 }
