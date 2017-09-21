@@ -3,12 +3,13 @@ const osmosis = require('osmosis');
 const http = require("http");
 
 const token = '445554489:AAGOmrNRNF9-Cn8GCIL3mCh6_GQ_iccqiYI';
-const selector = '#overviewQuickstatsDiv table tr:nth-child(2) td.line.text';
+const selector = '#overviewQuickstatsDiv table tr:nth-child(2)';
 const urlSearchFondo = 'https://www.google.es/search?q=sites:morningstar.es+caixa+fondo+';
 const urlSearchValores = 'https://www.google.es/search?q=valores+liquidativos+caixa+multisalud&oq=valores+liquidativos+caixa+';
-const urlImgBase = 'http://chart.googleapis.com/chart?chxt=y&cht=lc&chof=.png&chs=400x300&chdls=000000&chg=0%2C10&chco=76A4FB&chtt=Valor%20liquidativo&chts=76A4FB%2C14&chls=2&chma=35%2C15%2C0%2C20&chf=bg%2Cs%2CF9F9F9&chd=t%3A';
+const urlImgBase = 'http://chart.googleapis.com/chart?chxt=y&cht=lc&chof=.png&chs=400x300&chdls=000000&chg=0%2C10&chco=76A4FB&chts=76A4FB%2C14&chls=2&chma=35%2C15%2C0%2C20&chf=bg%2Cs%2CF9F9F9&chd=t%3A';
 let urlFondo = '';
 let urlValores = '';
+let fechagraph = '';
 let valores = [];
 
 const bot = new TelegramBot(token, {polling: true});
@@ -60,7 +61,10 @@ bot.on('message', (msg) => {
 		 	let minValue = Math.round(Math.min(...valores)) - 1;
 		 	urlImagen += '&chds=' + minValue + '%2C' + maxValue;
 		 	urlImagen += '&chxr=0%2C' + minValue + '%2C' + maxValue;
+		 	urlImagen += '&chtt=Valor%20liquidativo%20a%20' + fechagraph;
 		 	valores = [];
+		 	urlValores = '';
+      fechagraph = '';
 		 	console.log(urlImagen);
 		 	bot.sendPhoto(chatId, urlImagen);
 		}
@@ -74,10 +78,14 @@ var getValorLiquidativo = function(chatId, nombreFondo) {
 	osmosis
 	  .get(urlFondo)
 	  .find(selector)
-	  .set('valor')
+	  .set('valor', 'td.line.text')
+	  .set('fecha', 'td.line.heading .heading')
 	  .data(function(data) {
 	  	console.log(data);
-	    bot.sendMessage(chatId, nombreFondo + '\nValor liquidativo: ' + data.valor);	
+	  	data.valor = data.valor.replace('EUR','') + ' €';
+	    bot.sendMessage(chatId, nombreFondo + '\nValor liquidativo:<b>' + data.valor + '</b>\nA fecha: <b>' + data.fecha + '</b>', {
+	    	"parse_mode": "HTML"
+	    });	
 	  })
 	  .log(console.log)
 	  .error(console.log)
@@ -118,8 +126,12 @@ var searchFondo = function(fondo, chatId) {
     .follow('@href')
     .find('.contentBodyGrid li.valor')
     .set({'valor': 'span'})
+	  .find('.contentBodyGrid li.fechavalor:first')
+    .set({'fecha': 'span'})
     .data(function(data) {
+    	console.log(data);
     	if(!urlValores) urlValores = data.link;
+    	if(!fechagraph) fechagraph = data.fecha;
     	valores.push(parseFloat(data.valor.replace(' euros', '').replace(',','.')).toFixed(3));
 	  })
 	  .log(console.log)
